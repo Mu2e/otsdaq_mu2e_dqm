@@ -29,7 +29,8 @@ cet_set_compiler_flags(DIAGS VIGILANT
 #cet_report_compiler_flags()
 
 # these are minimum required versions, not the actual product versions
-find_package(otsdaq_mu2e 1.02.00 REQUIRED)
+find_package(otsdaq_mu2e      1.02.00 REQUIRED)
+find_package(artdaq_core_mu2e 2.01.02 REQUIRED)
 
 #find_package(art_root_io 1.10.01 REQUIRED)
 
