@@ -41,7 +41,7 @@ class TrackerDQM : public art::EDAnalyzer {
       fhicl::Atom<int>             diagLevel              {Name("diagLevel"         )    , Comment("diag level"                 ) };
       fhicl::Atom<int>             minNBytes              {Name("minNBytes"         )    , Comment("min N(bytes)"               ) };
       fhicl::Atom<int>             maxNBytes              {Name("maxNBytes"         )    , Comment("max N(bytes)"               ) };
-      fhicl::Atom<int>             dataHeaderOffset       {Name("dataheaderOffset"  )    , Comment("data header offset"         ) };
+      fhicl::Atom<int>             dataHeaderOffset       {Name("dataHeaderOffset"  )    , Comment("data header offset"         ) };
       fhicl::Sequence<int>         activeLinks            {Name("activeLinks"       )    , Comment("active Links"               ) };
       fhicl::Sequence<int>         refChCal               {Name("refChCal"          )    , Comment("reference channel CAL side" ) };
       fhicl::Sequence<int>         refChHV                {Name("refChHV"           )    , Comment("reference channel HV  side" ) };
@@ -50,6 +50,7 @@ class TrackerDQM : public art::EDAnalyzer {
       fhicl::Atom<int>             maxFragmentSize        {Name("maxFragmentSize"   )    , Comment("max fragment size"          ) };
       fhicl::Atom<int>             pulserFrequency        {Name("pulserFrequency"   )    , Comment("pulser frequency"           ) };
       fhicl::Atom<int>             port                   {Name("port"              )    , Comment("port"                       ) };
+      fhicl::Atom<int>             timeWindow             {Name("timeWindow"        )    , Comment("time window, 25 ns ticks"   ) };
     };
 
                                         // TODO use constants from StrawID

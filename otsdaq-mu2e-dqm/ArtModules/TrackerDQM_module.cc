@@ -3,15 +3,7 @@
 // This module (should) produce histograms of data from the straw tracker
 ///////////////////////////////////////////////////////////////////////////////
 #include "TRACE/tracemf.h"
-#define  TRACE_NAME "tfm_frontend"
-
-// #include "otsdaq-mu2e-dqm/ArtModules/TrackerDQM.h"
-// #include "otsdaq-mu2e-dqm/ArtModules/TrackerDQMHistoContainer.h"
-// #include "otsdaq-mu2e/ArtModules/HistoSender.hh"
-// #include "otsdaq/Macros/CoutMacros.h"
-// #include "otsdaq/Macros/ProcessorPluginMacros.h"
-// #include "otsdaq/MessageFacility/MessageFacility.h"
-// #include "otsdaq/NetworkUtilities/TCPSendClient.h"
+#define  TRACE_NAME "TrackerDQM"
 
 #include "TSystem.h"
 
@@ -77,7 +69,8 @@ TrackerDQM::TrackerDQM(art::EDAnalyzer::Table<Config> const& conf) :
   _dumpDTCRegisters(conf().dumpDTCRegisters()),
   _analyzeFragments(conf().analyzeFragments()),
   _maxFragmentSize (conf().maxFragmentSize ()),
-  _pulserFrequency (conf().pulserFrequency ())
+  _pulserFrequency (conf().pulserFrequency ()),
+  _port            (conf().port            ())
 {
   //  conf_             (conf()),
   //  histType_         (conf().histType ()),
@@ -89,6 +82,85 @@ TrackerDQM::TrackerDQM(art::EDAnalyzer::Table<Config> const& conf) :
 //-----------------------------------------------------------------------------
   _station = 0;
   _plane   = 0;
+
+  double f0(31.29e6);                   // 31.29 MHz
+
+  _timeWindow = conf().timeWindow()*25.;  // in ns
+
+  if      (_pulserFrequency ==  60) _freq = f0/(pow(2,9)+1);     // ~ 60 kHz
+  else if (_pulserFrequency == 250) _freq = f0/(pow(2,7)+1);     // ~250 kHz
+
+  _dt   = 1/_freq*1.e9;               // in ns
+//------------------------------------------------------------------------------
+// default map, Richie says TS1 may have an old firmware with some bugs
+//-----------------------------------------------------------------------------
+  int adc_index_0[96] = {
+    91, 85, 79, 73, 67, 61, 55, 49,
+    43, 37, 31, 25, 19, 13,  7,  1,
+    90, 84, 78, 72, 66, 60, 54, 48,
+      
+    42, 36, 30, 24, 18, 12,  6,  0,
+    93, 87, 81, 75, 69, 63, 57, 51,
+    45, 39, 33, 27, 21, 15,  9,  3,
+      
+    44, 38, 32, 26, 20, 14,  8,  2, 
+    92, 86, 80, 74, 68, 62, 56, 50,
+    47, 41, 35, 29, 23, 17, 11,  5,
+      
+    95, 89, 83, 77, 71, 65, 59, 53,
+    46, 40, 34, 28, 22, 16, 10,  4,
+    94, 88, 82, 76, 70, 64, 58, 52
+  };
+//-----------------------------------------------------------------------------
+// TS1: compared to _0, swap lanes 3 and 4, and in the new lane3 swap lines 1 and 3
+//-----------------------------------------------------------------------------
+  int adc_index_1[96] = {
+    91, 85, 79, 73, 67, 61, 55, 49,
+    43, 37, 31, 25, 19, 13,  7,  1,
+    90, 84, 78, 72, 66, 60, 54, 48,
+      
+    42, 36, 30, 24, 18, 12,  6,  0,
+    93, 87, 81, 75, 69, 63, 57, 51,
+    45, 39, 33, 27, 21, 15,  9,  3,
+      
+    94, 88, 82, 76, 70, 64, 58, 52,
+    46, 40, 34, 28, 22, 16, 10,  4,
+    95, 89, 83, 77, 71, 65, 59, 53,
+      
+    44, 38, 32, 26, 20, 14,  8,  2, 
+    92, 86, 80, 74, 68, 62, 56, 50,
+    47, 41, 35, 29, 23, 17, 11,  5
+  };
+
+
+  for (int i=0; i<96; i++) {
+    _adc_index_0[adc_index_0[i]] = i;
+    _adc_index_1[adc_index_1[i]] = i;
+  }
+
+//-----------------------------------------------------------------------------
+// initialize reference channels, at this point use channels 91 and 94 for all 
+// ROC's (the readout order is defined in firmware and is the same for all channels)
+//-----------------------------------------------------------------------------
+  _nActiveLinks        = _activeLinks.size();
+
+  for (int roc=0; roc<kMaxNLinks; roc++) {
+    _referenceChannel[roc][0] = 91;
+    _referenceChannel[roc][1] = 94;
+    if (roc < _nActiveLinks) {
+      _referenceChannel[roc][0] = _refChCal[roc];
+      _referenceChannel[roc][1] = _refChHV [roc];
+    }
+
+    _event_data.rdata[_station][_plane][roc].ref_ch[0] = &_event_data.rdata[_station][_plane][roc].channel[_referenceChannel[roc][0]];
+    _event_data.rdata[_station][_plane][roc].ref_ch[1] = &_event_data.rdata[_station][_plane][roc].channel[_referenceChannel[roc][1]];
+  }
+
+  _tdc_bin             = (5/256.*1e-3);       // TDC bin width (Richie), in us
+  _tdc_bin_ns          = _tdc_bin*1e3;        // convert to ns
+
+  _initialized         = 0;
+
 }
 
 //-----------------------------------------------------------------------------
@@ -415,9 +487,11 @@ void TrackerDQM::analyze_fragment(const art::Event& Evt, const artdaq::Fragment*
 // fragment size is specified in longs and includes service data, don't use
 //-----------------------------------------------------------------------------
   fdt->nbytes  = fdata[0];
+  TLOG(TLVL_DEBUG) << "fragment size: " << fdt->nbytes;
+
   if (fdata[0] > _maxFragmentSize) {
     _event_data.error = 3;
-    TLOG(TLVL_ERROR) << Form("event %6i:%8i:%8i : ERROR:%i in %s: fdt->nbytes= %i, BAIL OUT\n",
+    TLOG(TLVL_ERROR) << Form("run:subrun:event %6i:%8i:%8i : ERROR:%i in %s: fdt->nbytes= %i, BAIL OUT\n",
                              Evt.run(),Evt.subRun(),Evt.event(),_event_data.error,__func__,fdt->nbytes);
     return;
   }
@@ -427,10 +501,14 @@ void TrackerDQM::analyze_fragment(const art::Event& Evt, const artdaq::Fragment*
   short* first_address = fdata+_dataHeaderOffset; // offset is specified in 2-byte words
   short* last_address  = fdata+fdt->nbytes/2; // 
 
+  TLOG(TLVL_DEBUG) << "first_address, last_address: " << first_address << " " << last_address;
+
   while (first_address < last_address) {
 
     DtcDataHeaderPacket_t* dh = (DtcDataHeaderPacket_t*) first_address;
     int link      = dh->ROCID;
+
+    TLOG(TLVL_DEBUG) << "(" << __LINE__ << ") link:" << link ;
 //-----------------------------------------------------------------------------
 // check link number
 //-----------------------------------------------------------------------------
@@ -444,8 +522,8 @@ void TrackerDQM::analyze_fragment(const art::Event& Evt, const artdaq::Fragment*
 
     if (found == 0) {
       _event_data.error = 4;
-      TLOG(TLVL_ERROR) << Form("event %6i:%8i:%8i : ERROR:%i in %s: link=%i, BAIL OUT\n",
-                               Evt.run(),Evt.subRun(),Evt.event(),_event_data.error,__func__,link);
+      TLOG(TLVL_ERROR) << Form("event %6i:%8i:%8i : ERROR=%i link=%i, BAIL OUT\n",
+                               Evt.run(),Evt.subRun(),Evt.event(),_event_data.error,link);
       return;
     }
 
