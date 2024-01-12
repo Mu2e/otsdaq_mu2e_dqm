@@ -285,11 +285,6 @@ void TrackerDQM::beginJob() {
   // app_->Run(true);
   delete [] tmp_argv;
 
-  _canvas[0] = new TCanvas("canvas_000");
-  _canvas[1] = new TCanvas("canvas_001");
-
-  _browser   = new TBrowser();
-
 }
 
 //-----------------------------------------------------------------------------
@@ -304,6 +299,11 @@ void TrackerDQM::beginRun(const art::Run& aRun) {
 
   if (_initialized != 0) return;
   _initialized = 1;
+
+  _canvas[0] = new TCanvas("canvas_000");
+  _canvas[1] = new TCanvas("canvas_001");
+
+  _browser   = new TBrowser();
 
   book_histograms(rn);
 
