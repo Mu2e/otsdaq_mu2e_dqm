@@ -18,6 +18,7 @@
 #include "TH2.h"
 #include "TCanvas.h"
 #include "TApplication.h"
+#include "TBrowser.h"
 
 #include "Offline/RecoDataProducts/inc/StrawDigi.hh"
 #include "Offline/TrkHitReco/inc/PeakFit.hh"
@@ -153,8 +154,7 @@ class TrackerDQM : public art::EDAnalyzer {
   struct Hist_t {
     EventHist_t     event;
     RocHist_t       roc[kNStations][kNPlanesPerStation][kNPanelsPerPlane];
-  } _Hist;
-
+  };
 
   struct ChannelData_t {
     int      nhits;
@@ -241,6 +241,7 @@ class TrackerDQM : public art::EDAnalyzer {
 
   TApplication*   _app;
   TCanvas*        _canvas[100];
+  TBrowser*       _browser;
 
 public:
   

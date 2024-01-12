@@ -251,7 +251,7 @@ void TrackerDQM::book_histograms(int RunNumber) {
 
   art::TFileDirectory top_dir = tfs->mkdir("trk");
 
-  book_event_histograms(&top_dir,RunNumber,&_Hist.event);
+  book_event_histograms(&top_dir,RunNumber,&_hist.event);
 
   int station = 0;
   int plane   = 0;
@@ -259,7 +259,7 @@ void TrackerDQM::book_histograms(int RunNumber) {
   for (int i=0; i<_nActiveLinks; i++) {
     int link  = _activeLinks[i];
     art::TFileDirectory roc_dir = top_dir.mkdir(Form("roc_%i",link));
-    book_roc_histograms(&roc_dir,RunNumber,&_Hist.roc[station][plane][link],link);
+    book_roc_histograms(&roc_dir,RunNumber,&_hist.roc[station][plane][link],link);
   }
   
   TLOG(TLVL_INFO) << Form("pointer to the module: 0x%8p\n",(void*) this);
@@ -288,6 +288,8 @@ void TrackerDQM::beginJob() {
   _canvas[0] = new TCanvas("canvas_000");
   _canvas[1] = new TCanvas("canvas_001");
 
+  _browser   = new TBrowser();
+
 }
 
 //-----------------------------------------------------------------------------
@@ -304,6 +306,12 @@ void TrackerDQM::beginRun(const art::Run& aRun) {
   _initialized = 1;
 
   book_histograms(rn);
+
+  _canvas[0]->cd();
+  _hist.event.nbtot->Draw();
+
+  _canvas[1]->cd();
+  _hist.event.nfrag->Draw();
 }
 
 //-----------------------------------------------------------------------------
@@ -460,16 +468,16 @@ void TrackerDQM::fill_event_histograms(EventHist_t* Hist, EventData_t* Data) {
 //-----------------------------------------------------------------------------
 int TrackerDQM::fill_histograms() {
 
-  _Hist.event.error->Fill(_event_data.error);
-  _Hist.event.valid->Fill(_event_data.valid);
+  _hist.event.error->Fill(_event_data.error);
+  _hist.event.valid->Fill(_event_data.valid);
 
   if (_event_data.error != 0) return -1;
 
-  fill_event_histograms(&_Hist.event,&_event_data);
+  fill_event_histograms(&_hist.event,&_event_data);
 
   for (int ir=0; ir<_nActiveLinks; ir++) {
     int link = _activeLinks[ir];
-    fill_roc_histograms(&_Hist.roc[_station][_plane][link],&_event_data.rdata[_station][_plane][link]);
+    fill_roc_histograms(&_hist.roc[_station][_plane][link],&_event_data.rdata[_station][_plane][link]);
   }
   return 0;
 }
