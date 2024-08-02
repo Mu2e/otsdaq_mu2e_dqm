@@ -41,6 +41,7 @@ namespace ots {
       fhicl::Sequence<std::string> histType  { Name("histType"),  Comment("This parameter determines which quantity is histogrammed") };
       fhicl::Atom<int>             freqDQM   { Name("freqDQM"),   Comment("Frequency for sending histograms to the data-receiver") };
       fhicl::Atom<int>             diag      { Name("diagLevel"), Comment("Diagnostic level"), 0 };
+      fhicl::Atom<bool>            toJSON    { Name("toJSON"), Comment("Set to tru if sending canvases to a JSON file for online monitoring"), false};
     };
 
     typedef art::EDAnalyzer::Table<Config> Parameters;
@@ -60,6 +61,7 @@ namespace ots {
     std::string               moduleTag_;
     std::vector<std::string>  histType_;
     int                       freqDQM_,  diagLevel_, evtCounter_;
+    bool _toJSON;
 
     art::ServiceHandle<art::TFileService> tfs;
 
@@ -78,7 +80,8 @@ namespace ots {
 ots::STMDQMBareRoot::STMDQMBareRoot(Parameters const& conf)
   : art::EDAnalyzer(conf), conf_(conf()), port_(conf().port()), address_(conf().address()),
     moduleTag_(conf().moduleTag()), histType_(conf().histType()), 
-    freqDQM_(conf().freqDQM()), diagLevel_(conf().diag()), evtCounter_(0) {
+    freqDQM_(conf().freqDQM()), diagLevel_(conf().diag()), evtCounter_(0),
+    _toJSON(conf().toJSON()) {
 
     book_histograms(tfs);
     update_canvas();
@@ -95,18 +98,16 @@ void ots::STMDQMBareRoot::beginRun(const art::Run& run) {
 }
 
 void ots::STMDQMBareRoot::book_histograms(art::ServiceHandle<art::TFileService> tfs) {
-    _evtNumHist = tfs->make<TH1F>("event_number_recent", Form("Event Number (every %d events)", freqDQM_), 10000, 0, 10000);
+    _evtNumHist = tfs->make<TH1F>("event_number_recent", Form("Event Number (every %d events)", freqDQM_), 1000, 0, 10000);
     
     _dataTypesHist = tfs->make<TH1F>("stm_data_types", Form("Data Types (every %d events); data type; N fragments", freqDQM_),3,0,3);
     _dataTypesHist->GetXaxis()->SetBinLabel(1, "raw");
     _dataTypesHist->GetXaxis()->SetBinLabel(2, "ZS");
     //    _dataTypesHist->GetXaxis()->SetBinLabel(3, "raw");
     
-    _lastWaveform = tfs->make<TGraph>(300);
-    _lastWaveform->SetName("last_waveform");
-    _lastWaveform->SetTitle("Last Waveform");
+    _lastWaveform = tfs->makeAndRegister<TGraph>("last_waveform", "Last Waveform", 300);
 
-    _c_stmdqm = tfs->make<TCanvas>("c_stmdqm", "c_stmdqm");
+    _c_stmdqm = tfs->makeAndRegister<TCanvas>("c_stmdqm", "c_stmdqm");
     _c_stmdqm->Divide(2, 2);
 }
 
@@ -121,11 +122,24 @@ void ots::STMDQMBareRoot::update_canvas() {
   _lastWaveform->Draw("AL");
   _lastWaveform->GetXaxis()->SetTitle("Sample Number");
   _lastWaveform->GetYaxis()->SetTitle("ADC Value");
-  
-  _jsonFile.open("/home/mu2estm/vst_al9/tdaq-v3_01_00/otsdaq-mu2e-stm/UserWebGUI/json_dqm/c_stmdqm.json", std::fstream::out);
-  auto json = TBufferJSON::ToJSON(_c_stmdqm);
-  _jsonFile << json;
-  _jsonFile.close();
+
+  if (_toJSON) {
+    auto before_json    = std::chrono::steady_clock::now();
+    _jsonFile.open("/home/mu2estm/vst_al9/tdaq-v3_01_00/otsdaq-mu2e-stm/UserWebGUI/json_dqm/c_stmdqm.json", std::fstream::out);
+    auto after_json_open    = std::chrono::steady_clock::now();
+    auto json = TBufferJSON::ToJSON(_c_stmdqm);
+    //  auto json = TBufferJSON::ToJSON(_evtNumHist);
+    auto after_json_conv    = std::chrono::steady_clock::now();
+    _jsonFile << json;
+    auto after_json_write    = std::chrono::steady_clock::now();
+    _jsonFile.close();
+    auto after_json_close    = std::chrono::steady_clock::now();
+
+    std::cout << "Opening = " << artdaq::TimeUtils::GetElapsedTime(before_json, after_json_open)*1000 << " ms" << std::endl;
+    std::cout << "Converting = " << artdaq::TimeUtils::GetElapsedTime(after_json_open, after_json_conv)*1000 << " ms" << std::endl;
+    std::cout << "Writing = " << artdaq::TimeUtils::GetElapsedTime(after_json_conv, after_json_write)*1000 << " ms" << std::endl;
+    std::cout << "Closing = " << artdaq::TimeUtils::GetElapsedTime(after_json_write, after_json_close)*1000 << " ms" << std::endl;
+  }
 }
 
 void ots::STMDQMBareRoot::analyze(art::Event const& event) {
@@ -171,8 +185,8 @@ void ots::STMDQMBareRoot::analyze(art::Event const& event) {
 
 void ots::STMDQMBareRoot::endJob() {
   // only histograms are automatically written to the TFileService file
-  _c_stmdqm->Write();
-  _lastWaveform->Write();
+  //  _c_stmdqm->Write();
+  //  _lastWaveform->Write();
 }
 
 DEFINE_ART_MODULE(ots::STMDQMBareRoot)

@@ -1,0 +1,33 @@
+//#include "fcl/minimalMessageService.fcl"
+
+process: STMDQM
+
+source : {
+  module_type : RootInput
+}
+
+services : {
+//  message : @local::default_message
+}
+
+physics :{
+  analyzers: {
+    stmdqm: {
+      module_type : STMDQMBareRoot
+      moduleTag : "daq:STM"
+      histType : [ ]
+      port : 3000
+      freqDQM : 1
+      address : ""
+    }
+  }
+
+  p1 : [ ]
+  e1 : [stmdqm]
+
+  trigger_paths : [p1]
+  end_paths : [e1]
+
+}
+
+services.TFileService.fileName : "Data_stm/OutputData/OtsHistos/stmDQM_run%r_offline.root"
