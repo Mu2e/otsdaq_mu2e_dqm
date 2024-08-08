@@ -160,7 +160,7 @@ void ots::STMDQMBareRoot::analyze(art::Event const& event) {
       // }
       // std::cout << std::endl;
 
-    if (*(stmFrag.ZPFlag()) == 0) { // raw
+    if (*(stmFrag.DataType()) == 0) { // raw
       int16_t event_number = *(stmFrag.EvNum());
       //      std::cout << "[STMDQMBareRoot::analyze] EvNum = " << event_number << std::endl;
       _evtNumHist->Fill(event_number);

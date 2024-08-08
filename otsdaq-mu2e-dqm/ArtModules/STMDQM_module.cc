@@ -179,7 +179,7 @@ void ots::STMDQM::summary_fill(STMDQMHistoContainer       *recent_histos,
       std::cout << "[STMDQM::summary_fill] EvNum = " << event_number << std::endl;
       recent_histos->histograms[0]._Hist->Fill(event_number);
 
-      int16_t data_type = *(stmFrag.ZPFlag());
+      int16_t data_type = *(stmFrag.DataType());
       recent_histos->histograms[1]._Hist->Fill(data_type);
 
       std::cout << "[STMDQM::summary_fill] data_type hist has " << recent_histos->histograms[1]._Hist->GetEntries() << " entries" << std::endl;
