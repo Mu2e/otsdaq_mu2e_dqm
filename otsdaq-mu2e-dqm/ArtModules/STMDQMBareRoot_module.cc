@@ -105,7 +105,7 @@ void ots::STMDQMBareRoot::book_histograms(art::ServiceHandle<art::TFileService> 
     _dataTypesHist->GetXaxis()->SetBinLabel(2, "ZS");
     //    _dataTypesHist->GetXaxis()->SetBinLabel(3, "raw");
     
-    _lastWaveform = tfs->makeAndRegister<TGraph>("last_waveform", "Last Waveform", 300);
+    _lastWaveform = tfs->makeAndRegister<TGraph>("last_waveform", "Last Waveform");
 
     _c_stmdqm = tfs->makeAndRegister<TCanvas>("c_stmdqm", "c_stmdqm");
     _c_stmdqm->Divide(2, 2);
@@ -120,7 +120,7 @@ void ots::STMDQMBareRoot::update_canvas() {
 
   _c_stmdqm->cd(3);
   _lastWaveform->Draw("AL");
-  _lastWaveform->GetXaxis()->SetTitle("Sample Number");
+  _lastWaveform->GetXaxis()->SetTitle("Time [s]");
   _lastWaveform->GetYaxis()->SetTitle("ADC Value");
 
   if (_toJSON) {
@@ -160,16 +160,18 @@ void ots::STMDQMBareRoot::analyze(art::Event const& event) {
       // }
       // std::cout << std::endl;
 
-    if (*(stmFrag.ZPFlag()) == 0) {
+    if (*(stmFrag.ZPFlag()) == 0) { // raw
       int16_t event_number = *(stmFrag.EvNum());
       //      std::cout << "[STMDQMBareRoot::analyze] EvNum = " << event_number << std::endl;
       _evtNumHist->Fill(event_number);
 
       _dataTypesHist->Fill(0);
 
+      int16_t event_len = *(stmFrag.EvLen());
+      _lastWaveform->Set(event_len); // update the number of points in the TGraph
       auto waveformBegin = stmFrag.DataBegin();
       for (int i_point = 0; i_point < _lastWaveform->GetN(); ++i_point) {
-        _lastWaveform->SetPoint(i_point, i_point, *(waveformBegin+i_point));
+        _lastWaveform->SetPoint(i_point, i_point*(1/300.)/1000, *(waveformBegin+i_point));
       }
     }
     else {
@@ -184,9 +186,6 @@ void ots::STMDQMBareRoot::analyze(art::Event const& event) {
 
 
 void ots::STMDQMBareRoot::endJob() {
-  // only histograms are automatically written to the TFileService file
-  //  _c_stmdqm->Write();
-  //  _lastWaveform->Write();
 }
 
 DEFINE_ART_MODULE(ots::STMDQMBareRoot)
