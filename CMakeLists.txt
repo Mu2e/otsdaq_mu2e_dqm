@@ -39,8 +39,8 @@ include_directories($ENV{BTRK_INC} $ENV{KINKAL_INC})
 link_directories($ENV{BTRK_LIB} $ENV{KINKAL_LIB})
 
  # XDAQ Extra setup
- include_directories($ENV{XDAQ_INC} $ENV{XDAQ_INC}/linux)
-link_directories($ENV{XDAQ_LIB})
+ include_directories($ENV{XDAQ_ROOT}/include/linux $ENV{XDAQ_ROOT}/include)
+link_directories($ENV{XDAQ_ROOT}/lib)
 
 
 include(BuildPlugins)
