@@ -28,7 +28,7 @@
 //   - normalized occupancy histograms are streamed; raw occupancy histograms are
 //     still saved to the ROOT file
 ////////////////////////////////////////////////////////////////////////////////////
-#include "Offline/CaloConditions/inc/CaloDAQMap.hh"
+#include "Offline/CaloConditions/inc/CalDAQMap.hh"
 #include "Offline/ProditionsService/inc/ProditionsHandle.hh"
 
 #include "art/Framework/Core/EDAnalyzer.h"
@@ -740,12 +740,12 @@ class CaloDigiDQM : public art::EDAnalyzer
 	void flushHitsAveragePoint();
 
 	void processDigi(CaloDigi const&   digi,
-	                 CaloDAQMap const& calodaqconds,
+	                 CalDAQMap const& calodaqconds,
 	                 EventStats&       stats,
 	                 int               eventBlock);
 
 	bool decodeAddress(CaloDigi const&   digi,
-	                   CaloDAQMap const& calodaqconds,
+	                   CalDAQMap const& calodaqconds,
 	                   DigiAddress&      addr);
 
 	void processLaserDigi(CaloDigi const&    digi,
@@ -1206,8 +1206,8 @@ class CaloDigiDQM : public art::EDAnalyzer
 	void ensureLiveWaveformBooked(
 	    int disk, int boardID, int chanID, int rawId, int sipmId);
 
-	// Create the expected empty ROOT folder/histogram structure from CaloDAQMap.
-	void prebookExpectedStructureFromCaloDAQMap(CaloDAQMap const& calodaqconds);
+	// Create the expected empty ROOT folder/histogram structure from CalDAQMap.
+	void prebookExpectedStructureFromCalDAQMap(CalDAQMap const& calodaqconds);
 
 	template<class WaveformT>
 	void ensureFirstHitBooked(int              disk,
@@ -1233,7 +1233,7 @@ class CaloDigiDQM : public art::EDAnalyzer
 	std::string moduleTag_;
 	bool        sendHists_;
 
-	// True after the expected ROOT structure is prebooked from CaloDAQMap.
+	// True after the expected ROOT structure is prebooked from CalDAQMap.
 	bool prebookedExpectedStructure_{false};
 
 	bool        waveformDensityUpdated_{false};
@@ -1488,7 +1488,7 @@ class CaloDigiDQM : public art::EDAnalyzer
 
 	TH1F* h_waveform_size_{nullptr};
 
-	mu2e::ProditionsHandle<mu2e::CaloDAQMap> calodaqconds_h_;
+	mu2e::ProditionsHandle<mu2e::CalDAQMap> calodaqconds_h_;
 
 	// Stamp-based validity avoids per-event clearing of large vectors.
 	int                   pairStamp_{0};
@@ -2513,7 +2513,7 @@ void CaloDigiDQM::fillBoardIssueMetric(int boardID, int chanID, IssueType issue)
 // Idempotent booking / prebooking helpers
 // ===========================
 //
-// Used both for CaloDAQMap-based prebooking and runtime fallback.
+// Used both for CalDAQMap-based prebooking and runtime fallback.
 // Booking state is separate from whether a channel has appeared in data.
 
 TH1F* CaloDigiDQM::ensureChannelDistBooked(
@@ -3143,7 +3143,7 @@ bool CaloDigiDQM::extractFeatures(WaveformT const& waveform,
 }
 
 bool CaloDigiDQM::decodeAddress(CaloDigi const&   digi,
-                                CaloDAQMap const& calodaqconds,
+                                CalDAQMap const& calodaqconds,
                                 DigiAddress&      addr)
 {
 	addr.sipmId = digi.SiPMID();
@@ -3286,7 +3286,7 @@ void CaloDigiDQM::fillEventLevelCounters(EventStats const& stats,
 	accumulateHitsAverage(eventNumber, stats.nDigis);
 }
 
-void CaloDigiDQM::prebookExpectedStructureFromCaloDAQMap(CaloDAQMap const& calodaqconds)
+void CaloDigiDQM::prebookExpectedStructureFromCalDAQMap(CalDAQMap const& calodaqconds)
 {
 	size_t nRegularChannels = 0;
 	size_t nLaserChannels   = 0;
@@ -3391,7 +3391,7 @@ void CaloDigiDQM::prebookExpectedStructureFromCaloDAQMap(CaloDAQMap const& calod
 	}
 
 	mf::LogInfo("CaloDigiDQM")
-	    << "Prebooked expected CaloDigiDQM ROOT structure from CaloDAQMap:"
+	    << "Prebooked expected CaloDigiDQM ROOT structure from CalDAQMap:"
 	    << " regularChannels=" << nRegularChannels << " laserChannels=" << nLaserChannels
 	    << " unmappedSipmIds=" << nUnmapped << " invalidEntries=" << nInvalid;
 }
@@ -3405,7 +3405,7 @@ void CaloDigiDQM::analyze(art::Event const& event)
 
 	if(!prebookedExpectedStructure_)
 	{
-		prebookExpectedStructureFromCaloDAQMap(calodaqconds);
+		prebookExpectedStructureFromCalDAQMap(calodaqconds);
 		prebookedExpectedStructure_ = true;
 	}
 
@@ -3453,7 +3453,7 @@ void CaloDigiDQM::updateNormalizedOccHistograms()
 }
 
 void CaloDigiDQM::processDigi(CaloDigi const&   digi,
-                              CaloDAQMap const& calodaqconds,
+                              CalDAQMap const& calodaqconds,
                               EventStats&       stats,
                               int               eventBlock)
 {
