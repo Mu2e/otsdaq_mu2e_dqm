@@ -739,14 +739,14 @@ class CaloDigiDQM : public art::EDAnalyzer
 	void accumulateHitsAverage(double eventNumber, int nHits);
 	void flushHitsAveragePoint();
 
-	void processDigi(CaloDigi const&   digi,
+	void processDigi(CaloDigi const&  digi,
 	                 CalDAQMap const& calodaqconds,
-	                 EventStats&       stats,
-	                 int               eventBlock);
+	                 EventStats&      stats,
+	                 int              eventBlock);
 
-	bool decodeAddress(CaloDigi const&   digi,
+	bool decodeAddress(CaloDigi const&  digi,
 	                   CalDAQMap const& calodaqconds,
-	                   DigiAddress&      addr);
+	                   DigiAddress&     addr);
 
 	void processLaserDigi(CaloDigi const&    digi,
 	                      DigiAddress const& addr,
@@ -3142,9 +3142,9 @@ bool CaloDigiDQM::extractFeatures(WaveformT const& waveform,
 	return true;
 }
 
-bool CaloDigiDQM::decodeAddress(CaloDigi const&   digi,
+bool CaloDigiDQM::decodeAddress(CaloDigi const&  digi,
                                 CalDAQMap const& calodaqconds,
-                                DigiAddress&      addr)
+                                DigiAddress&     addr)
 {
 	addr.sipmId = digi.SiPMID();
 
@@ -3452,10 +3452,10 @@ void CaloDigiDQM::updateNormalizedOccHistograms()
 	updateNormalizedHist(laserBoardH_.occ, laserBoardH_.occNorm);
 }
 
-void CaloDigiDQM::processDigi(CaloDigi const&   digi,
+void CaloDigiDQM::processDigi(CaloDigi const&  digi,
                               CalDAQMap const& calodaqconds,
-                              EventStats&       stats,
-                              int               eventBlock)
+                              EventStats&      stats,
+                              int              eventBlock)
 {
 	const auto& waveform = digi.waveform();
 
