@@ -1,0 +1,67 @@
+#include "Offline/fcl/minimalMessageService.fcl"
+#include "Offline/fcl/standardServices.fcl"
+
+process_name: myanalysis
+
+source: {
+  module_type: RootInput
+  fileNames: [ "../../../../data_mv/mc2_120678_digis_hits.art"]
+}
+
+services: {
+  GeometryService: {
+    inputFile: "Offline/Mu2eG4/geom/geom_common.txt"
+    bFieldFile: "Offline/Mu2eG4/geom/bfgeom_reco_v01.txt"
+    simulatedDetector: { tool_type: "Mu2e" }
+  }
+
+  GlobalConstantsService: { inputFile: "Offline/GlobalConstantsService/data/globalConstants_01.txt" }
+
+  DbService: @local::DbEmpty
+
+  ProditionsService: @local::Proditions
+
+  TimeTracker: {}
+
+  TFileService: {
+    fileName: "calo_test.root"
+  //  closeFileFast: false
+  }
+}
+
+physics: {
+  producers: {
+    CaloDigisFromDTCEvents: {
+      module_type: CaloDigisFromDTCEvents
+      dataType: 0
+      diagLevel: 0
+      useOfflineID: true
+    }
+  }
+
+  analyzers: {
+    CaloDigiDQM: {
+      module_type: CaloDigiDQM
+      caloDigiModuleLabel: "CaloDigisFromDTCEvents"
+      address: "mu2e-dl-01-data.fnal.gov"
+      port: 6000
+      moduleTag: "CaloDigiDQM"
+      freqDQM: 100
+      freqWaveforms: 0
+      sendHists: true
+      enableDiskMaps: false
+      diskCombines: ["amp"]
+
+      useReferenceFile: false
+      referenceFile: "reference.root"
+    }
+  }
+
+  p1: [ CaloDigisFromDTCEvents ]
+  e1: [ CaloDigiDQM ]
+
+  trigger_paths: [ p1 ]
+  end_paths: [ e1 ]
+}
+
+services.scheduler.wantSummary: true

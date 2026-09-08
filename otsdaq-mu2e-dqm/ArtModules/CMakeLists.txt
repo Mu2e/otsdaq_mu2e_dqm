@@ -5,6 +5,31 @@
 # cet_build_plugin(TrackerDQM art::module LIBRARIES REG
 #   )
 
+
+cet_build_plugin(CaloDigiDQM art::module LIBRARIES REG
+  otsdaq-mu2e::ArtModules
+  artdaq-core-mu2e::Data
+  artdaq-core-mu2e::Data_dict
+  artdaq-core-mu2e::Overlays
+  artdaq::DAQdata
+  art_root_io::TFileService_service
+  art_root_io::art_root_io
+  Offline::DAQ
+  Offline::CaloConditions
+  Offline::CaloVisualizer
+  Offline::CaloVisualizer_dict
+  Offline::Mu2eInterfaces
+  ROOT::Hist
+  ROOT::Tree
+  ROOT::Core
+  ROOT::RIO
+  ROOT::Gui
+  ROOT::Graf
+  otsdaq::NetworkUtilities
+)
+
+
+
 cet_build_plugin(CaloDQM art::module LIBRARIES REG
 art_root_io::TFileService_service
 artdaq-core-mu2e::Data
@@ -19,6 +44,20 @@ ROOT::Gui
 )
 
 cet_build_plugin(IntensityInfoDQM art::module LIBRARIES REG
+art_root_io::TFileService_service
+artdaq-core-mu2e::Data
+otsdaq-mu2e::ArtModules
+otsdaq::NetworkUtilities
+Offline::RecoDataProducts
+ROOT::Hist
+ROOT::Tree
+ROOT::Core
+ROOT::RIO
+ROOT::Gui
+)
+
+
+cet_build_plugin(LumiDQM art::module LIBRARIES REG
 art_root_io::TFileService_service
 artdaq-core-mu2e::Data
 otsdaq-mu2e::ArtModules
@@ -46,11 +85,9 @@ ROOT::RIO
 ROOT::Gui
 )
 
-# BTrk and KinKal have non-standard Find*.cmake...
+# KinKal has non-standard Find*.cmake...
 include_directories($ENV{KINKAL_INC})
-include_directories($ENV{BTRK_INC})
 link_directories($ENV{KINKAL_LIB})
-link_directories($ENV{BTRK_LIB})
 
 cet_build_plugin(TriggerDQM art::module LIBRARIES REG
 art_root_io::TFileService_service
@@ -86,7 +123,6 @@ art_root_io::TFileService_service
 artdaq-core-mu2e::Data
 	artdaq::ArtModules
 Offline::BFieldGeom
-      Offline::ConditionsService
       Offline::DataProducts
       Offline::GeometryService
       Offline::GlobalConstantsService

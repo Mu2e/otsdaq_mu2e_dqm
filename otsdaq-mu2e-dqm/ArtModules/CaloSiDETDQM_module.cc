@@ -31,7 +31,7 @@
 #include "otsdaq/NetworkUtilities/TCPSendClient.h"
 
 //-- insert calls to proditions ..for calodmap-----
-#include "Offline/CaloConditions/inc/CaloDAQMap.hh"
+#include "Offline/CaloConditions/inc/CalDAQMap.hh"
 #include "Offline/ProditionsService/inc/ProditionsHandle.hh"
 //-------------------------------------------------
 
@@ -98,7 +98,7 @@ class CaloSiDETDQM : public art::EDAnalyzer
 	CaloSiDETDQMHistoContainer* histo_container = new CaloSiDETDQMHistoContainer();
 	HistoSender*                histSender_;
 	bool                        doOnspillHist_, doOffspillHist_;
-	mu2e::ProditionsHandle<mu2e::CaloDAQMap> _calodaqconds_h;
+	mu2e::ProditionsHandle<mu2e::CalDAQMap> _calodaqconds_h;
 
 	int this_eventNumber;
 };
@@ -238,7 +238,7 @@ void ots::CaloSiDETDQM::summary_fill(art::Event const&               event,
 {
 	histo_container->h1_channel_occupancy_lastevent._Hist->Reset();
 
-	mu2e::CaloDAQMap const& calodaqconds = _calodaqconds_h.get(event.id());
+	mu2e::CalDAQMap const& calodaqconds = _calodaqconds_h.get(event.id());
 
 	TLOG(TLVL_DEBUG) << "There are " << caloDigis->size() << " calo digis";
 	for(uint ihit = 0; ihit < caloDigis->size(); ihit++)
